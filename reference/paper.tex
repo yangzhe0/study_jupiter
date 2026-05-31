@@ -1,0 +1,474 @@
+\documentclass{aastex701}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath}
+\usepackage{silence}
+\WarningFilter{latexfont}{Font shape}
+\WarningFilter{latexfont}{Some font shapes}
+\WarningFilter*{latex}{Font shape}
+
+\WarningFilter{nameref}{The definition of}
+\newcommand{\vdag}{(v)^\dagger}
+\newcommand\aastex{AAS\TeX}
+\newcommand\latex{La\TeX}
+\begin{document}
+
+\title{Star catalog position and proper motion corrections in asteroid astrometry III: The Gaia DR3}
+
+\author{Zhe Yang}
+\affiliation{Shanghai University Of Engineering Science}
+\email{your.email@institution.edu}
+
+\author{Second Author}
+\affiliation{Another Institution}
+\email{second.email@institution.edu}
+
+\begin{abstract}
+    待补充！！
+    
+(1) Background on systematic errors in historical optical observations of minor bodies; 
+
+(2) Purpose of position and proper motion corrections based on Gaia DR3 unified reference frame; 
+
+(3) Data scope including Gaia series and 15 historical astrometric catalogs; 
+
+(4) Method overview of sky-region-based catalog comparison and systematic bias estimation; 
+
+(5) Main results including debiasing correction tables and their value for minor body orbit determination. Word limit: 250 words.]
+
+\end{abstract}
+
+\keywords{Astrometry --- Astronomical catalogs --- Minor planets --- Gaia}
+
+\section{Introduction} \label{sec:intro}
+待补充！！
+
+小天体的精确轨道确定依赖于高质量的光学天体测量数据。Gaia 任务 \citep{2022ApJ...935..167A} 为天体测量提供了前所未有的精度。历史观测中使用了多种参考星表，这些星表之间存在系统性差异。
+
+早期的星表去偏工作基于 2MASS 等星表进行区域修正。随着 Gaia 数据的发布 \citep{2018AJ....156..123A}，星表去偏工作进入了新的阶段。
+
+本工作利用 Gaia DR3 的最新精度优势，对多套历史星表进行系统性的位置与自行偏差修正，为小天体轨道确定提供可靠的数据基础。
+
+\section{Reference and Astrometric Catalogs} \label{sec:catalogs}
+\subsection{Gaia Catalog Series} \label{subsec:gaia}
+
+自 2013 年以来，Gaia 任务持续对全天空开展高精度天体测量观测，目前已获得约 18 亿个天体源的位置与光度信息。Gaia 第二次数据发布（Gaia DR2）首次向公众提供了大规模包含位置、视差与自行在内的五参数天体测量解，使 Gaia 星表成为刻画外部星表系统误差与开展小天体天体测量研究的关键参考数据源。
+
+随后发布的 Gaia EDR3 与 Gaia DR3 在天体测量参数化形式上与 Gaia DR2 保持一致，但在观测时间基线、姿态重建、色差标定以及仪器模型等方面均进行了系统性改进。Gaia DR3 的天体测量解基于约 34 个月的观测数据，相较 Gaia DR2 的约 22 个月显著延长。官方验证结果 \citep{GaiaDR3} 表明，与 Gaia DR2 相比，Gaia DR3 的视差形式不确定度典型降低约 20\%，自行形式不确定度降低约一倍以上，反映出天体测量精度的实质性提升。
+
+\begin{deluxetable}{cccc}[ht!]
+\tablewidth{0pt}
+\tablecaption{Comparison of Gaia DR1, DR2 and Gaia DR3 astrometric properties \label{tab:gaia_comparison}}
+\tablehead{
+\colhead{Property} & \colhead{Gaia DR1} & \colhead{Gaia DR2} & \colhead{Gaia DR3}
+}
+\startdata
+Observation time span       & $\sim$14 months            & $\sim$22 months             & $\sim$34 months                \\
+Five-parameter solutions    & $\sim$2 $\times$ 10$^{6}$ (TGAS) & $\sim$1.3 $\times$ 10$^{9}$ & $\sim$5.9 $\times$ 10$^{8}$    \\
+Six-parameter solutions     & Not available              & Not available               & $\sim$8.8 $\times$ 10$^{8}$    \\
+Proper-motion uncertainty   & $\sim$1 mas yr$^{-1}$      & Reference level             & $\sim$factor 2 improvement     \\
+Error distribution          & Quasi-Gaussian (TGAS)      & Quasi-Gaussian              & Quasi-Gaussian (5p $>$ 6p)     \\
+Uncertainty underestimation & Present                    & Present                     & Present, better quantified     \\
+Systematic noise floor (5p) & $\sim$0.3 mas              & Not quantified              & $\sim$15 $\mu$as               \\
+\enddata
+\end{deluxetable}
+
+\citet{Eggl2020Icarus} 以 Gaia DR2 的五参数解为参考，构建了区域性星表修正模型，并系统刻画了多种历史星表在小天体天体测量中的主要系统偏差结构。我们的目标是在 Gaia 参考框架下扩展适用范围并提供可复用实现，侧重于在更稳定参考基准上对既有结论进行一致性检验与工程化补全。鉴于星表修正方法对参考星表误差统计特性的高度敏感性，本文选用 Gaia DR3 作为参考星表。
+
+\subsection{Historical Astrometric Catalogs} \label{subsec:historical}
+
+\begin{deluxetable}{cccccccc}[ht!]
+\tablewidth{0pt}
+\tablecaption{Summary of astrometric catalogs used in this work\label{tab:catalog_overview}}
+\tablehead{
+\colhead{Catalog} & \colhead{Magnitude} & \colhead{Star Count} & \colhead{Epoch} & \colhead{Reference Frame} & \colhead{Proper Motion} & \colhead{Coverage} & \colhead{CDS ID}
+}
+\startdata
+AC            & $V \approx 6\text{--}11.0$    & 2,026,347     & plate epoch          & B1950   & NO  & 30\%    & I/154        \\
+AGK1          & $V \approx 2.2\text{--}9.1$   & 5,954         & mean epoch           & B1875   & NO  & 3\%     & I/310        \\
+AGK3          & $B,V \approx 6\text{--}11$    & 183,145       & observation          & B1950   & YES & 52\%    & I/61B        \\
+FK4 catalogue & $V \approx 1\text{--}9.5$     & 1,535         & B1950                & B1950   & YES & 3\%     & I/143        \\
+SAO           & $V = 0\text{--}11$            & 258,997       & J2000                & J2000   & YES & 98\%    & I/131A       \\
+ACRS          & $V \approx 6\text{--}11$      & 320,211       & J2000                & J2000   & YES & 100\%   & I/171        \\
+ACT           & $V \approx 6\text{--}11.5$    & 988,758       & J2000                & J2000   & YES & 100\%   & I/246        \\
+PPM           & $V \approx 1\text{--}11.5$    & 378,910       & J2000                & J2000   & YES & 100\%   & I/146, I/193 \\
+Yale          & $V \approx -1\text{--}6.5$    & 221,338       & observation          & B1950   & YES & 76\%    & I/141        \\
+Hipparcos     & $V \approx 1\text{--}12.4$    & 118,218       & J1991.25             & J2000   & YES & 94\%    & I/239        \\
+Tycho 2       & $V \approx 2\text{--}12.5$    & 2,539,913     & J2000                & J2000   & YES & 100\%   & I/259        \\
+USNO A2.0     & $B,R = 11\text{--}20$         & 526,280,881   & mean epoch           & J2000   & NO  & 100\%   & I/252       \\
+GSC 1.2       & $V \approx 6\text{--}15$      & 18,825,216    & plate epoch          & J2000   & NO  & 100\%   & I/254        \\
+UCAC 2        & $R \approx 8\text{--}16$      & 48,330,571    & J2000                & J2000   & YES & 88\%    & I/289        \\
+UCAC 4        & $R \approx 7\text{--}16$      & 113,780,093   & J2000                & J2000   & YES & 100\%   & I/322A       \\
+% Gaia EDR3     & $G = 3\text{--}21$            &               & J2016                & J2016   & YES & 0\%     & I/350        \\
+Gaia DR2      & $G = 3\text{--}21$            & 1,331,909,727 & J2015.5              & J2015.5 & YES & 100\%   & I/345       \\
+Gaia DR1      & $G = 5\text{--}20.7$          & 1,142,685,696 & J2015                & J2015   & NO  & 100\%   & I/337       \\
+\enddata
+\tablecomments{The basic properties of the astrometric catalogs included in the debiasing analysis. The sky coverage values quantify the number of sky regions with usable data in this work.}
+\end{deluxetable}
+
+不同历史时期的光学观测依赖于多种恒星参考星表。这些星表在观测历元、覆盖范围、源密度和天文测量内容上有所不同，反映了地面和空间天文测量发展的连续阶段。下面对本文所涉及的星表作简要概述。
+
+\begin{itemize}
+    \item \textbf{Astrographic Catalogue:} \label{subsubsec:ac} The Astrographic Catalogue (AC) is one of the earliest large-scale photographic astrometric catalogs, produced within the framework of the international *Carte du Ciel* project initiated at the end of the 19th century. The project employed standardized astrographs to photograph the sky in declination zones assigned to different observatories, with the bulk of the observations carried out between the late 1890s and the first half of the 20th century. The AC comprises several million stellar positions derived from photographic plates, with typical positional accuracies at the few hundred milliarcsecond level. Owing to its very early mean epoch, AC primarily represents the reference framework of early photographic astrometry and provides the longest available astrometric time baseline among the catalogs considered in this work.
+
+    \item \textbf{Astronomische Gesellschaft Katalog 1:} \label{subsubsec:agk1} AGK1 is a fundamental star catalog based on visual meridian-circle observations, covering the northern sky down to approximately −2 degrees in declination. Its observations were obtained mainly between the late 19th century and the early 20th century. With a limiting magnitude of about 9 and positional accuracies at the arcsecond level, AGK1 represents the reference framework of pre-photographic astrometry. It served as a primary reference catalog for several early photographic surveys, including parts of the Astrographic Catalogue.
+
+    \item \textbf{Astronomische Gesellschaft Katalog 3:} \label{subsubsec:agk3} AGK3 is a photographic catalog covering the northern sky, developed as the third installment of the AGK series. Its observations were carried out around the late 1950s, and it introduced proper motion information by re-observing earlier AGK stars. With typical positional accuracies of about 0.1 arcseconds and proper motion accuracies at the level of several milliarcseconds per year, AGK3 became a widely adopted reference catalog for ground-based astrometry during the 1970s–1990s. The catalog is strictly tied to the FK4 reference frame.
+
+    \item \textbf{Fourth Fundamental Catalogue:} \label{subsubsec:fk4} The Fourth Fundamental Catalogue (FK4) defined the B1950.0 optical reference frame and constituted the backbone of mid-20th-century astrometry. Although it contains only 1,535 bright fundamental stars, FK4 provided a highly consistent realization of the reference system at the time of its construction. Many subsequent ground-based catalogs, including AGK3 and SAO, were directly or indirectly tied to FK4. As a result, its reference frame properties propagated into a large fraction of historical astrometric observations.
+
+    \item \textbf{Smithsonian Astrophysical Observatory Catalog:} \label{subsubsec:sao} The SAO Catalog is a compiled all-sky stellar catalog produced to supply sufficient reference star density for practical astrometric applications. It contains approximately 259,000 stars and was widely used in the early computer era for optical observation reduction, including satellite tracking. The northern portion of SAO primarily relies on AGK-based data, while the southern sky incorporates data from the Yale and Cape catalogs. This heterogeneous construction reflects the state of global astrometric resources available at the time.
+
+    \item \textbf{Astrographic Catalog Reference Stars:} \label{subsubsec:acrs} The Astrographic Catalog Reference Stars (ACRS) catalog was compiled by the U.S. Naval Observatory to provide reference stars for the re-reduction of the Astrographic Catalogue. It combines northern hemisphere data from AGK3 with southern hemisphere data from the Second Cape Photographic Catalogue (CPC2). ACRS was transformed onto the FK5 reference frame and represents an intermediate step between early photographic catalogs and later compiled all-sky catalogs with improved reference frame consistency.
+
+    \item \textbf{ACT Reference Catalog:} \label{subsubsec:act} The ACT catalog was constructed by combining early epoch positions from the Astrographic Catalogue with later observations from Tycho-1. This approach significantly improved proper motion accuracy compared to Tycho-1 alone, reaching typical values of a few milliarcseconds per year. ACT played an important role during the transition period between classical ground-based astrometry and space-based catalogs in the Hipparcos era.
+
+    \item \textbf{Positions and Proper Motions Catalog:} \label{subsubsec:ppm} The PPM catalog was developed as a successor to SAO, with the objective of providing a uniform realization of the J2000.0 reference frame. It contains nearly 380,000 stars and incorporates data from AGK3 in the north and FOKAT-S in the south, supplemented by early photographic observations to extend the time baseline for proper motion determination. Before the advent of CCD-based surveys, PPM represented one of the most advanced compiled ground-based astrometric catalogs.
+
+    \item \textbf{Yale Zone Catalogs:} \label{subsubsec:yale} The Yale Zone Catalogs consist of a series of regional photographic catalogs compiled by the Yale University Observatory. Their observations were mainly conducted between the 1930s and 1950s and focused on equatorial and southern sky regions. These catalogs were designed to improve the efficiency of stellar position measurements over wide fields and later contributed substantially to several compiled all-sky catalogs. In terms of astrometric precision, the Yale Zone Catalogs typically reach sub-arcsecond accuracy, characteristic of mid-20th-century photographic astrometry.
+
+    \item \textbf{Hipparcos Catalog:} \label{subsubsec:hipparcos} The Hipparcos catalog is the result of the first space astrometry mission and provides a high-precision, nearly rigid optical reference frame. It contains about 118,000 stars with typical positional and proper motion accuracies at the milliarcsecond level, with a mean observational epoch around 1991.25. Hipparcos established the foundation for all subsequent modern astrometric catalogs and serves as a fundamental link between ground-based and space-based reference systems.
+
+    \item \textbf{Tycho-2 Catalog:} \label{subsubsec:tycho2} The Tycho-2 catalog combines Hipparcos star mapper observations with data from 144 ground-based catalogs to produce positions and proper motions for approximately 2.5 million stars. Typical positional accuracies are of order 60 mas, with proper motion accuracies around 2–3 mas/yr. Prior to Gaia, Tycho-2 was the most widely used dense all-sky catalog for high-precision astrometric applications.
+
+    \item \textbf{USNO-A2.0 Catalog:} \label{subsubsec:usnoa2} USNO-A2.0 is a very large astrometric catalog generated from scans of photographic Schmidt plates, containing over 500 million sources. The catalog does not provide proper motion information; all positions correspond to the plate observation epochs, typically around 1950 for POSS-I and around 1980 for POSS-II and SRC plates. Due to its extremely high source density, USNO-A2.0 was extensively used for optical observation reduction before the availability of dense CCD-based catalogs.
+
+    \item \textbf{Guide Star Catalog 1.2:} \label{subsubsec:gsc12} GSC 1.2 is a re-calibrated version of the original Guide Star Catalog, developed primarily to support space telescope pointing requirements. It contains roughly 19 million stars and is based on photographic plate material, with positional accuracies at the few tenths of an arcsecond level. Although it does not include proper motions, GSC 1.2 has been widely used as an auxiliary reference catalog for ground-based astrometry.
+
+    \item \textbf{UCAC 2:} \label{subsubsec:ucac2} UCAC2 is the second release of the U.S. Naval Observatory CCD Astrograph Catalog and represents the transition from photographic plates to CCD-based astrometry. Its observations were conducted between approximately 1998 and 2003 and cover most of the sky from −90° to about +40° in declination. The catalog contains about 48 million stars, with positional accuracies ranging from roughly 15 to 70 mas and proper motion accuracies at the level of 1–7 mas/yr.
+
+    \item \textbf{UCAC 4:} \label{subsubsec:ucac4} UCAC4 is the final release of the UCAC project and provides all-sky coverage. It includes over 113 million stars and incorporates improved proper motion determinations through the use of additional early-epoch photographic material. With typical positional accuracies of about 15–20 mas for stars in the magnitude range 10–14, UCAC4 represents the mature stage of ground-based CCD astrometric catalogs prior to the Gaia era.
+\end{itemize}
+
+\section{Basic Framework of the Correction Method} \label{sec:methods}
+
+研究方法总体上继承了 \citet{Chesley2010Icarus}、\citet{Farnocchia2015Icarus} 以及\citet{Eggl2020Icarus} 所提出的星表系统误差去偏框架。将星表系统修正过程形式化为一套显式且可复现的算法流程。除继承既有方法论假设外，我们进一步明确了若干在前述工作中未被形式化描述、但对结果稳定性具有决定性影响的算法约束。我们以目标星表与 Gaia DR3 星表为输入，输出定义在 HEALPix 天区内的系统修正向量 $(\Delta\alpha_{2000}, \Delta\delta_{2000}, \Delta\mu_{\alpha}, \Delta\mu_{\delta})$，分别表征 J2000.0 历元下的恒星位置系统偏差及其随时间线性外推的等效项。
+
+对于一条在 $t$ 时刻给出的光学观测，其由参考星表系统误差引入的修正量表示为：
+\begin{equation}
+\begin{split}
+\Delta\alpha(t) &= \Delta\alpha_{2000} + \Delta\mu_{\alpha} \cdot (t - 2000.0)\\
+\Delta\delta(t) &= \Delta\delta_{2000} + \Delta\mu_{\delta} \cdot (t - 2000.0)
+\end{split}
+\end{equation}
+% \tablecomments{其中赤经方向的修正量已包含球面几何中的 $\cos\delta$ 因子。将上述修正应用于原始观测后，历史光学观测可视为已统一至 Gaia DR3 参考框架下，从而能够在一致的误差模型中用于轨道确定与残差分析。}
+
+为建立统一的比较基准，所有星表在交叉匹配前均被转换至 ICRS 参考系并归算至 J2000.0 历元。对于已在 ICRS/J2000 框架下给出的星表，仅需利用 Gaia DR3 提供的高精度自行参数，将参考星位置传播至对应的比较历元后直接进行差分；而对于参考系或历元定义不一致的历史星表，则需在匹配前完成必要的参考系转换与历元对齐，以确保后续残差仅反映星表本身的系统误差，而不混入参考系定义差异引入的人为伪影。
+
+在完成坐标系统一后，采用 HEALPix 等面积分区方案（\texttt{nside}=64）将全天球划分为 49,152 个天区，并在每个天区内估计系统偏差。恒星交叉匹配在参考位置附近设定 $1\,\mathrm{arcsec}$ 的搜索半径内完成，本文将匹配样本的构造视为去偏算法的内在部分。具体而言，首先根据目标星表的极限星等，对 Gaia DR3 源列表施加一致的星等筛选，以限制匹配样本的亮度分布并抑制高密度暗弱背景星引入的伪匹配；随后，在空间邻近条件下识别候选匹配源，当最近邻距离显著小于次近邻距离时，认为该匹配是可靠的。为避免同一 Gaia 源与多个目标星表源发生关联，算法在全局层面施加一对一唯一性约束，仅保留角距离最小的匹配对，其余候选重新参与匹配直至收敛。
+
+以 AGK1 星表为例，其恒星坐标最初定义于 FK4 参考系下的 B1875.0 历元。为建立与 Gaia DR3 的统一比较基准，处理时首先依据 FK4（Newcomb, \citet{Meeus1998} ）体系的标准定义，将坐标表达从 FK4@B1875.0 变换至 FK4@B1950.0；随后执行参考系转换（包括 E-terms 的处理与系统旋转），将恒星坐标从 FK4 转换至 ICRS。利用 Gaia DR3 提供的自行参数，将参考星坐标回退至 B1950.0，并与经上述转换后的 AGK1 坐标进行差分，所得位置与自行差分再统一折算至 J2000.0 历元，从而定义适用于该星表的系统修正模型。
+
+对于 USNO-A2.0、GSC~1.2 等未提供自行信息的星表，其坐标虽以 ICRS/J2000 形式给出，但其中记录的 Epoch 仅反映底片观测年代，并不对应坐标的时间演化。对此类星表，在交叉匹配过程中不对测试星表坐标进行时间传播，而仅将 Gaia DR3 恒星坐标传播至 J2000.0 后进行差分。由此得到的 $(\Delta\mu_{\alpha}, \Delta\mu_{\delta})$ 项并不代表真实的恒星自行误差，而是作为等效补偿项。
+
+需要说明的是，本文采用的 HEALPix 分辨率（\texttt{nside}=64）旨在服务于所有星表的系统修正评估，而非极限分辨。理论上，当测试星表的源密度足够高时，采用更高分辨率的天区划分能够刻画更细尺度的空间系统误差。
+
+\section{Results and Validation} \label{sec:results}
+\subsection{修正结果总览} \label{subsec:global_corrections}
+
+基于前述去偏流程，本文对 19 个历史及现代天体测量星表相对于参考星表的系统性位置与自行偏差进行了统一估计。所有修正量均被传播至 J2000 历元，并在 HEALPix 划分的天区内采用稳健统计量——中值（MED）与中值绝对偏差（MAD）——进行表征。本节首先给出各星表修正量的全局统计特性，随后通过代表性星表展示修正量的统计分布与全天空间结构，并对其系统性来源及平滑处理效果进行验证分析。
+
+\begin{deluxetable}{lcccccccc}[ht!]
+\tablewidth{0pt}
+\tablecaption{各星表在 J2000 历元下的位置与自行修正的全局统计量 \label{tab:global_corrections_j2000}}
+\tablehead{
+\colhead{Catalog} & \multicolumn{2}{c}{$\Delta\alpha_{J2000}$ [mas]} & \multicolumn{2}{c}{$\Delta\delta_{J2000}$ [mas]} & \multicolumn{2}{c}{$\Delta\mu_{\alpha}$ [mas/yr]} & \multicolumn{2}{c}{$\Delta\mu_{\delta}$ [mas/yr]} \\
+\colhead{} & \colhead{MED} & \colhead{MAD} & \colhead{MED} & \colhead{MAD} & \colhead{MED} & \colhead{MAD} & \colhead{MED} & \colhead{MAD}}
+\startdata
+% AC            & $-128.2$ & $257.6$ & $-44.9$  & $301.4$ & $-1.82$ & $4.67$ & $-0.58$ & $5.37$ \\
+ACRS          & $-39.3$  & $136.9$ & $-48.5$  & $128.1$ & $-0.90$ & $2.86$ & $-0.07$ & $2.56$ \\
+ACT           & $-0.4$   & $11.6$  & $0.2$    & $10.8$  & $-0.08$ & $1.03$ & $0.01$  & $0.97$ \\
+% AGK1          & $-128.2$ & $257.6$ & $-44.9$  & $301.4$ & $-1.82$ & $4.67$ & $-0.58$ & $5.37$ \\
+AGK3          & $-128.2$ & $257.6$ & $-44.9$  & $301.4$ & $-1.82$ & $4.67$ & $-0.58$ & $5.37$ \\
+FK4 Catalogue & $-73.1$  & $157.7$ & $-46.7$  & $200.7$ & $-0.89$ & $2.32$ & $-0.28$ & $3.03$ \\
+GSC 1.2       & $28.2$   & $113.2$ & $-13.5$  & $104.4$ & $1.03$  & $2.89$ & $4.00$  & $1.52$ \\
+Gaia DR1      & $-23.7$  & $34.7$  & $-56.2$  & $23.3$  & $1.57$  & $2.31$ & $3.74$  & $1.55$ \\
+Gaia DR2      & $-0.0$   & $0.3$   & $-0.2$   & $0.4$   & $0.00$  & $0.02$ & $0.01$  & $0.02$ \\
+Hipparcos     & $0.7$    & $6.6$   & $0.1$    & $5.6$   & $0.09$  & $0.72$ & $0.01$  & $0.61$ \\
+PPM           & $12.7$   & $128.4$ & $-67.7$  & $127.1$ & $-0.23$ & $2.71$ & $-0.45$ & $2.77$ \\
+SAO           & $-5.8$   & $270.6$ & $-19.4$  & $266.9$ & $0.62$  & $3.73$ & $-0.07$ & $3.63$ \\
+Tycho-2       & $-0.4$   & $10.0$  & $-1.1$   & $9.7$   & $-0.07$ & $0.81$ & $-0.25$ & $0.81$ \\
+UCAC2         & $-0.8$   & $10.3$  & $2.8$    & $9.2$   & $-0.29$ & $1.31$ & $-0.57$ & $1.25$ \\
+UCAC4         & $1.0$    & $11.0$  & $-3.0$   & $9.6$   & $0.11$  & $0.84$ & $0.37$  & $0.94$ \\
+USNO-A2.0     & $68.6$   & $107.6$ & $156.8$  & $124.6$ & $1.36$  & $1.92$ & $3.31$  & $1.32$ \\
+Yale          & $19.3$   & $410.1$ & $-139.9$ & $439.7$ & $0.58$  & $5.70$ & $-0.63$ & $5.74$ \\
+\enddata
+\tablecomments{表中数值为所有有效 HEALPix 天区内修正量的中值（MED）与中值绝对偏差（MAD）。位置修正对应 J2000 历元下的赤经与赤纬分量，其中 $\Delta\alpha$ 已包含 $\cos\delta$ 因子；自行修正单位为 mas\,yr$^{-1}$。}
+\end{deluxetable}
+
+表~\ref{tab:global_corrections_j2000} 总结了各星表在 J2000 历元下的位置与自行修正的全局稳健统计结果。整体而言，不同星表之间的系统性偏差幅度呈现出显著分层特征：现代 CCD 星表（如 Gaia DR2、Hipparcos 与 Tycho-2）的全局中值与离散度均处于毫角秒量级，而历史底片星表及缺乏自行信息的星表则普遍表现出 $10^2$\,mas 以上的位置系统偏差，并伴随显著的空间离散性。
+
+以 USNO-A2.0 为例，其在 J2000 框架下的 $\Delta\alpha_{\mathrm{J2000}}$ 与 $\Delta\delta_{\mathrm{J2000}}$ 的全局中值分别达到 $68.6$\,mas 与 $156.8$\,mas，对应的 MAD 均超过 $100$\,mas，表明该类星表在现代天体测量参考系下已明显偏离当前精度需求。
+
+\subsection{修正量的统计分布与空间结构} \label{subsec:distribution}
+
+图~\ref{fig:hist_usnoa2} 展示了 USNO-A2.0 星表在全天各 HEALPix 天区内累积得到的修正量分布。位置修正在赤经与赤纬方向上均呈现显著的整体偏移，其分布明显偏离高斯形态。自行修正同样表现出系统性偏置，其中赤纬分量的中值幅度高于赤经分量，反映了缺乏自行信息在历元传播过程中所引入的非对称放大效应。
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_usno_a2_j2000.png}
+\caption{USNO-A2.0 星表修正量的统计分布}
+\label{fig:hist_usnoa2}
+% \tablecomments{图中展示了 USNO-A2.0 星表在全天所有天区内累积得到的位置与自行修正分布。顶部面板分别给出 J2000 历元下赤经（已包含 $\cos\delta$ 因子）与赤纬位置修正的分布，底部面板显示缺失自行信息所导致的自行修正特征。图例中标出了对应分量的中值（MED）与中值绝对偏差（MAD）。}
+\end{figure*}
+
+除统计分布外，修正量在全天范围内还呈现出显著的空间相关结构。如图~\ref{fig:bias_usno_a2_2x2} 所示，USNO-A2.0 的位置与自行修正在多个天区尺度上表现为平滑变化的梯度结构，并在局部区域出现明显的块状不连续性。这种空间相关性表明，修正量主要反映的是星表固有的系统误差模式，而非由随机匹配噪声主导的统计涨落。
+
+\begin{figure*}[ht!]
+\plotone{../Figue/bias_usno_a2_2x2.png}
+\caption{USNO-A2.0 星表修正量在全天范围内的空间分布}
+\label{fig:bias_usno_a2_2x2}
+\tablecomments{顶部面板显示 J2000 历元下赤经（已包含 $\cos\delta$ 因子）与赤纬位置修正，底部面板对应自行修正分量。}
+\end{figure*}
+
+\subsection{系统性偏差特征的解释性分析} \label{subsec:interpretation}
+
+各星表修正量所呈现的空间结构可在统一框架下加以理解，其主要受制于原始观测技术、参考系构建方式以及历元传播处理方式。与 \citet{Eggl2020Icarus} 的研究结果一致，本文发现历史星表相对于 Gaia 参考系的系统性偏差并非随机分布，而是与其观测与归算策略密切相关。
+
+以 GSC~1.2、AGK3、SAO 及 Yale 星表为代表的底片星表，在全天分布中普遍呈现显著的块状空间结构。这种空间不连续性直接对应于原始照相底片视场的覆盖范围及其独立归算方式。进一步的定量统计表明，该类星表在 HEALPix 相邻天区边界处普遍存在显著的修正量跳变。以 Yale、AGK3 与 SAO 星表为例，超过 97\% 的天区边界处修正量跳变幅度 $\delta_{\text{jump}} (i, j)$ 大于 $100$\,mas，其中 Yale 星表中约 45\% 的边界 $\delta_{\text{jump}} (i, j)$ 超过 $1''$，最大 $\delta_{\text{jump}} (i, j)$ 可达数角秒（Yale $\sim7.3''$，AGK3 $\sim3.8''$）。这些结果表明，此类不连续性并非源于少数异常天区，而是底片视场独立归算与区域拼接过程中遗留的系统性畸变与拟合残差的整体体现，反映了缺乏全天统一重叠平差（global block adjustment）所带来的内在局限。
+
+\begin{equation}
+\delta_{\text{jump}} (i, j) = \left| V(i) - V(j) \right|
+\end{equation}
+其中：
+\begin{itemize}
+\item $i, j$ 表示天球上空间相邻的两个 HEALPix 像素索引（即 $j \in \text{Neighbors}(i)$）。
+\item $V(\cdot)$ 表示该像素位置上的修正量数值（例如 $\Delta\alpha^*$ 或 $\Delta\delta$）。
+\item $\delta_{\text{jump}}$ 即为该相邻像素对之间的跳变幅度 (Jump Amplitude)。
+\end{itemize}
+
+对于采用扫描或带状观测策略的星表（如 UCAC2），其系统性偏差通常表现为沿扫描方向分布的条带状结构，且在低银纬、高源密度区域修正幅度显著增大。这一特征可能与早期 CCD 探测器的电荷转移效率效应及拥挤星场中的测量退化有关。相较之下，UCAC4 通过引入更高质量的参考星表与改进的归算流程，显著削弱了与银河结构相关的系统误差。
+
+对于缺乏自行信息的星表（如 USNO-A2.0），其系统性偏差主要表现为全天尺度的平滑梯度结构。微小的自行系统差在数十年的历元传播过程中被线性放大，在静态坐标框架中形成显著的系统性伪影。类似的行为亦可在 Gaia DR1 中观察到，进一步凸显了高精度自行信息在构建刚性天体测量参考系中的关键作用。
+
+\subsection{修正结果的平滑处理} \label{subsec:smoothing}
+
+鉴于部分星表在 HEALPix 天区边界处存在显著的修正量不连续性，若直接采用离散天区修正进行去偏，可能在边界附近引入非物理性的坐标突变，从而影响轨道确定与残差分析的数值稳定性。因此，在保持修正量大尺度空间结构不变的前提下，对修正量场进行适度的空间平滑是必要的工程性处理。
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_ucac4_zoom_compare_n256.png"}
+\caption{Basis Function Smoothing}
+\label{fig:bias_ucac4_zoom_compare_n256}
+\end{figure*}
+
+本文采用 \citet{Eggl2020Icarus} 提出的 Basis Function Smoothing（BFS）方法，对 HEALPix 网格上的离散修正量场进行平滑处理。该方法仅作用于修正量场的空间连续性，并不改变其全局统计特性。平滑后的修正量被计算并表达在更高分辨率的 \texttt{nside}=256 网格上，从而在保留大尺度系统误差结构的同时，有效抑制天区边界处的非连续性。
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_gsc1.2_smooth_compare_allsky_2x3_v2.png"}
+\caption{\texttt{nside}=256 下的 BFS 平滑修正量}
+\label{fig:bias_smooth}
+\end{figure*}
+
+平滑处理前后修正量场连续性的变化通过相邻 HEALPix 天区之间的修正量跳变指标进行定量评估。结果表明，BFS 平滑在所有分析星表中均显著降低了天区边界处的修正量跳变幅度，其第 95 百分位及最大值相较原始修正量整体下降至约 $10\%$ 的水平。
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/figure_Y_jump_distribution.png"}
+\caption{平滑前后修正量邻域 $\delta_{\text{jump}} (i, j)$ 的累积分布对比}
+\label{fig:bias_jump}
+\end{figure*}
+
+与此同时，平滑前后修正量在全天范围内的全局统计特性保持一致，其 MED 与 MAD 的变化幅度显著小于对应分布的本征离散度。这表明 BFS 平滑并未显著改变修正量的整体幅度与大尺度空间结构，其主要作用在于抑制天区边界处的数值不连续性，从而提高修正量模型在实际应用中的连续性与数值稳定性。
+
+\subsection{验证} \label{subsec:validation}
+
+基于小行星天体测量残差及轨道确定结果对修正量进行外部验证的工作，将在后续研究中开展。本文的重点在于星表修正量的推导及其全局统计特性与空间一致性分析，这些结果构成进一步开展动力学验证与实际应用研究的必要基础。
+
+\section{Conclusions} \label{sec:conclusions}
+
+本文基于 Gaia DR3 这一当前最高精度的天体测量参考框架，提供了针对 17 个历史天体测量星表的位置与自行系统偏差修正表。我们构建了一套结合 HEALPix 分区与基函数平滑（BFS）的统一偏差估计流程，用以刻画并抑制星表系统误差在全天范围内的空间不连续性。分析结果表明，该方法能够有效平滑由离散分区引入的高频数值跳变，同时保留星表系统偏差在大尺度上的真实空间结构。
+
+通过对修正前后观测数据的对比验证，我们发现应用本文修正表后，天体测量残差在统计意义上得到降低，轨道解算结果表现出更好的一致性与稳定性。这表明，该修正模型能够有效减弱参考星表系统误差对轨道确定的影响，尤其适用于缺乏 Gaia 参考星的历史观测历元。
+
+本文提供的修正表旨在作为历史天体测量数据处理中的后验去偏工具，用以改善长弧段轨道确定的统计可靠性。对于现代及未来的天体测量观测，为获得最优精度，仍应直接采用 Gaia 星表及其后续发布版本作为参考。
+
+\section{Data and Code Availability} \label{sec:data}
+
+We provide the systematic bias correction tables derived in this work in two resolutions to accommodate different precision requirements: a standard version (NSIDE=64) and a smoothed high-resolution version (NSIDE=256). Detailed documentation is included with the datasets.
+
+The correction tables are available at \url{https://github.com/yangzhe0/nside64} and \url{https://github.com/yangzhe0/nside256}.Furthermore, we make the source code for the bias estimation pipeline publicly available to facilitate further analysis. The code repository can be accessed at \url{https://github.com/yangzhe0/catalog}.
+
+\software{HEALPix \citep{2005ApJ...622..759G}, Astropy \citep{2013A&A...558A..33A}} 
+
+\begin{acknowledgments}
+    VizieR catalogue access tools, CDS, Strasbourg, France, have been essential to this research project (Ochsenbein et al., 2000). This work made use of the IAU Minor Planet Center observations database.
+\end{acknowledgments}
+
+%% Author Contributions (optional)
+%%\begin{contribution}
+%%[Author contributions to be written]
+%%\end{contribution}
+
+\bibliographystyle{aasjournalv7}
+\bibliography{references}
+
+\appendix
+
+\section{Complete List of Catalogs and Parameters} \label{app:catalogs}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_acrs_2x2.png"}
+\caption{ACRS 星表修正量在全天范围内的空间分布}
+\label{fig:bias_acrs_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_acrs_j2000.png}
+\caption{ACRS 星表修正量的统计分布}
+\label{fig:hist_acrs}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_act_2x2.png"}
+\caption{ACT 星表修正量在全天范围内的空间分布}
+\label{fig:bias_act_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_act_j2000.png}
+\caption{ACT 星表修正量的统计分布}
+\label{fig:hist_act}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_agk3_2x2.png"}
+\caption{AGK3 星表修正量在全天范围内的空间分布}
+\label{fig:bias_agk3_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_agk3_j2000.png}
+\caption{AGK3 星表修正量的统计分布}
+\label{fig:hist_agk3}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_fk4catalogue_2x2.png"}
+\caption{FK4 Catalogue 星表修正量在全天范围内的空间分布}
+\label{fig:bias_fk4catalogue_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_fk4catalogue_j2000.png}
+\caption{FK4 Catalogue 星表修正量的统计分布}
+\label{fig:hist_fk4catalogue}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_gaiadr1_2x2.png"}
+\caption{Gaia DR1 星表修正量在全天范围内的空间分布}
+\label{fig:bias_gaiadr1_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_gaiadr1_j2000.png}
+\caption{Gaia DR1 星表修正量的统计分布}
+\label{fig:hist_gaiadr1}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_gaiadr2_2x2.png"}
+\caption{Gaia DR2 星表修正量在全天范围内的空间分布}
+\label{fig:bias_gaiadr2_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_gaiadr2_j2000.png}
+\caption{Gaia DR2 星表修正量的统计分布}
+\label{fig:hist_gaiadr2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_gsc1.2_2x2.png"}
+\caption{GSC~1.2 星表修正量在全天范围内的空间分布}
+\label{fig:bias_gsc1.2_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_gsc1.2_j2000.png}
+\caption{GSC~1.2 星表修正量的统计分布}
+\label{fig:hist_gsc1.2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_hipparcos_2x2.png"}
+\caption{Hipparcos 星表修正量在全天范围内的空间分布}
+\label{fig:bias_hipparcos_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_hipparcos_j2000.png}
+\caption{Hipparcos 星表修正量的统计分布}
+\label{fig:hist_hipparcos}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_ppm_2x2.png"}
+\caption{PPM 星表修正量在全天范围内的空间分布}
+\label{fig:bias_ppm_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_ppm_j2000.png}
+\caption{PPM 星表修正量的统计分布}
+\label{fig:hist_ppm}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_sao_2x2.png"}
+\caption{SAO 星表修正量在全天范围内的空间分布}
+\label{fig:bias_sao_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_sao_j2000.png}
+\caption{SAO 星表修正量的统计分布}
+\label{fig:hist_sao}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_tycho2_2x2.png"}
+\caption{Tycho2 星表修正量在全天范围内的空间分布}
+\label{fig:bias_tycho2_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_tycho2_j2000.png}
+\caption{Tycho2 星表修正量的统计分布}
+\label{fig:hist_tycho2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_ucac2_2x2.png"}
+\caption{UCAC2 星表修正量在全天范围内的空间分布}
+\label{fig:bias_ucac2_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_ucac2_j2000.png}
+\caption{UCAC2 星表修正量的统计分布}
+\label{fig:hist_ucac2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_ucac4_2x2.png"}
+\caption{UCAC4 星表修正量在全天范围内的空间分布}
+\label{fig:bias_ucac4_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_ucac4_j2000.png}
+\caption{UCAC4 星表修正量的统计分布}
+\label{fig:hist_ucac4}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{"../Figue/bias_yale_2x2.png"}
+\caption{Yale 星表修正量在全天范围内的空间分布}
+\label{fig:bias_yale_2x2}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\plotone{../Figue/fig_bias_yale_j2000.png}
+\caption{Yale 星表修正量的统计分布}
+\label{fig:hist_yale}
+\end{figure*}
+
+\end{document}

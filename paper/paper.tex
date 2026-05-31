@@ -1,0 +1,377 @@
+\documentclass{aastex701}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath}
+\usepackage{silence}
+\WarningFilter{latexfont}{Font shape}
+\WarningFilter{latexfont}{Some font shapes}
+\WarningFilter*{latex}{Font shape}
+\WarningFilter{nameref}{The definition of}
+
+\newcommand{\vdag}{(v)^\dagger}
+\newcommand\aastex{AAS\TeX}
+\newcommand\latex{La\TeX}
+\newcommand{\oc}{O$-$C}
+\newcommand{\dra}{$\Delta\alpha\cos\delta$}
+\newcommand{\ddec}{$\Delta\delta$}
+
+\begin{document}
+
+\title{基于 Gaia DR3 的 J1--J18 木星卫星地基天体测量观测星表构建}
+
+\author{【作者姓名】}
+\affiliation{【单位】}
+\email{【邮箱】}
+
+\author{【第二作者】}
+\affiliation{【单位】}
+\email{【第二作者邮箱】}
+
+\begin{abstract}
+木星卫星的高精度星历在行星系统动力学、空间探测任务设计、掩星预报以及长期轨道演化研究中具有重要作用。星历精度不仅依赖新的高精度观测，也依赖历史地基天体测量资料的系统整理、统一改正和质量评估。已有公开数据库保存了大量木星卫星观测资料，但这些资料在观测时标、参考系、观测类型、参考星表和数据格式等方面并不完全一致，限制了其在后续星历拟合和误差分析中的直接使用。
+
+本文不报告新的观测资料，而是针对 IMCCE 数据库中 J1--J18 木星卫星的已有地基天体测量观测，构建一份统一格式的观测星表。我们对原始记录进行字段解析、目标识别、观测类型分类和元数据整理；将观测时刻统一到地球时（TT），并将可转换的观测量统一到国际天球参考系（ICRS）；进一步以 Gaia DR3 为基准，对可识别参考星表的观测资料进行星表系统误差改正。为评估整理后资料的质量，本文采用 JPL DE441 行星历与 jup347 木星卫星星历计算观测量与理论量之差（\oc）残差，并按卫星、观测年代、观测技术、观测站和文献来源进行统计分析。
+
+最终星表将包含 J1--J18 共 18 颗木星卫星在【待填：起止年份】期间的【待填：观测记录数】条观测记录，对应【待填：观测坐标数】个观测坐标和【待填：观测夜数】个观测夜。本文将给出按卫星、观测年代、观测技术、观测站、参考星表和文献来源划分的统计结果，并展示 Gaia DR3 星表系统误差改正前后的 \oc 残差分布【待填：主要统计发现】。该星表为后续木星卫星星历拟合、历史观测再评估和系统误差研究提供了一套统一、可追溯的数据基础。
+\end{abstract}
+
+\keywords{Astrometry --- Astronomical catalogs --- Ephemerides --- Jovian satellites --- Gaia}
+
+\section{Introduction} \label{sec:intro}
+
+木星卫星系统是太阳系动力学研究和深空探测任务设计中的重要对象。伽利略卫星的潮汐耗散、平均运动共振和长期轨道演化为研究行星--卫星相互作用提供了近距离样本；内侧小卫星和外侧不规则卫星则记录了木星系统形成、捕获和碰撞演化的信息。无论是动力学参数反演、掩星和互掩互食事件预报，还是未来探测任务的轨道设计，都需要长期、稳定且误差特性清楚的木星卫星星历作为基础。
+
+高精度星历的建立依赖两类资料：一类是持续获得的新观测，另一类是对历史观测资料的系统整理和再处理。新的 CCD 或空间观测可以显著提高局部时段的测量精度，但历史地基观测在时间跨度上具有不可替代的价值。对于木星卫星而言，长期观测覆盖能够约束轨道平均运动、长期摄动和可能的潮汐演化效应。因此，即使早期观测的单次精度低于现代观测，它们在延长时间基线和揭示长期系统趋势方面仍然重要。
+
+公开数据库已经收录了大量木星卫星天体测量资料，其中 IMCCE 维护的天然卫星观测资料是相关研究的重要来源。然而，这些观测来自不同年代、不同观测站、不同仪器和不同数据发表格式。原始资料可能采用 UTC、UT、ET 或其他时标，也可能参考 FK4、FK5、J2000、ICRS 或具体参考星表；观测量既包括绝对赤经赤纬，也包括相对位置角和角距、差分赤经赤纬以及相对切平面坐标。若直接混合使用这些资料，时标差异、参考系差异和参考星表系统误差会进入残差分析和星历拟合，进而影响对观测精度和动力学模型误差的判断。
+
+Gaia 星表为历史地基天体测量资料的再处理提供了新的基准。Gaia DR3 在位置、视差和自行方面具有高精度，并且是 ICRS 的高质量实现 \citep{GaiaDR3}。许多早期参考星表相对于 Gaia DR3 的系统偏差可以被重新估计并用于观测资料改正。对于木星卫星这类太阳系天体，星表系统误差通常表现为赤经和赤纬方向上的区域性偏移，其量级可能与部分历史观测的 \oc 残差相当。因此，在构建长期观测星表时，将观测资料统一到 Gaia DR3 对齐的 ICRS 框架下，是提高数据一致性和可解释性的关键步骤。
+
+本文的工作与包含新观测资料的观测编目研究不同。本文不引入新的观测数据，也不在当前阶段拟合新的木星卫星星历。本文的目标是针对 IMCCE 数据库中 J1--J18 木星卫星的已有地基天体测量资料，构建一份统一格式、统一时标、统一参考系并带有质量评估信息的观测星表。具体而言，本文完成以下工作：
+
+\begin{enumerate}
+    \item 收集并解析 IMCCE 中 J1--J18 木星卫星的地基天体测量记录，建立原始记录与目标卫星、观测站、观测技术、数据来源之间的对应关系；
+    \item 将观测时刻统一到 TT，并将可转换的观测量统一到 ICRS；
+    \item 基于 Gaia DR3 对可识别参考星表的观测资料进行星表系统误差改正；
+    \item 使用 DE441 + jup347 计算 \oc 残差，并从卫星、年代、技术和来源等角度评估资料质量；
+    \item 输出一份字段定义清晰、元数据可追溯、可用于后续星历拟合和误差研究的 J1--J18 木星卫星观测星表。
+\end{enumerate}
+
+本文结构如下。第 \ref{sec:data} 节定义数据来源、研究对象和数据边界。第 \ref{sec:compilation} 节给出星表编制原则、字段体系和 IMCCE 记录解析方法。第 \ref{sec:transform} 节说明 TT、ICRS、相对观测转换和 Gaia DR3 星表系统误差改正。第 \ref{sec:oc} 节说明 \oc 残差计算。第 \ref{sec:catalog} 节描述最终星表输出和统计分析安排。第 \ref{sec:discussion} 节讨论本文星表的适用范围、局限性和后续工作。第 \ref{sec:conclusions} 节给出结论。
+
+\section{Data Source and Scope} \label{sec:data}
+
+\subsection{IMCCE database and download boundary} \label{subsec:imcce}
+
+本文以 IMCCE 数据库中公开提供的天然卫星地基天体测量资料为唯一原始数据来源。数据库访问时间为【待填：访问日期】，使用的数据入口、下载文件或版本标识为【待填：文件名、URL 或数据库入口】。本文不合并 Minor Planet Center、JPL Solar System Dynamics、ADS 原文表格或其他数据库中的额外观测记录。这样做的目的并非否认其他资料来源的价值，而是为了在初始版本中保持数据来源单一、可追溯，并优先完成 IMCCE 资料体系内的统一处理。
+
+从 IMCCE 获取的原始资料通常包含观测目标、观测时间、观测站、观测量、参考文献或数据来源标识等信息。由于不同记录的历史来源不同，部分字段可能缺失或含义依赖原始发表文献。本文在星表中同时保留原始字段和标准化字段，并对无法可靠判断的项目使用统一缺失值标记，而不进行未经证实的推断。
+
+\subsection{J1--J18 target definition} \label{subsec:targets}
+
+本文研究对象为 J1--J18 木星卫星。按常用编号，J1--J4 为四颗伽利略卫星：Io、Europa、Ganymede 和 Callisto。J5--J18 包括 Amalthea、Himalia、Elara、Pasiphae、Sinope、Lysithea、Carme、Ananke、Leda、Thebe、Adrastea、Metis、Callirrhoe 和 Themisto【待核验：J1--J18 对应表、命名拼写和 IAU 编号】。
+
+\begin{deluxetable}{cllc}[ht!]
+\tablewidth{0pt}
+\tablecaption{J1--J18 木星卫星研究对象列表 \label{tab:targets}}
+\tablehead{
+\colhead{编号} & \colhead{英文名称} & \colhead{中文名称} & \colhead{备注}
+}
+\startdata
+J1  & Io         & 伊娥       & Galilean satellite \\
+J2  & Europa     & 欧罗巴     & Galilean satellite \\
+J3  & Ganymede   & 甘尼米德   & Galilean satellite \\
+J4  & Callisto   & 卡利斯托   & Galilean satellite \\
+J5  & Amalthea   & 阿玛尔忒亚 & 【待核验】 \\
+J6  & Himalia    & 希玛利亚   & 【待核验】 \\
+J7  & Elara      & 厄拉拉     & 【待核验】 \\
+J8  & Pasiphae   & 帕西法厄   & 【待核验】 \\
+J9  & Sinope     & 锡诺普     & 【待核验】 \\
+J10 & Lysithea   & 利西忒亚   & 【待核验】 \\
+J11 & Carme      & 卡尔墨     & 【待核验】 \\
+J12 & Ananke     & 阿南刻     & 【待核验】 \\
+J13 & Leda       & 勒达       & 【待核验】 \\
+J14 & Thebe      & 忒拜       & 【待核验】 \\
+J15 & Adrastea   & 阿德剌斯忒亚 & 【待核验】 \\
+J16 & Metis      & 墨提斯     & 【待核验】 \\
+J17 & Callirrhoe & 卡利罗厄   & 【待核验】 \\
+J18 & Themisto   & 忒弥斯托   & 【待核验】 \\
+\enddata
+\end{deluxetable}
+
+不同卫星的观测资料数量和精度预期存在显著差异。伽利略卫星亮度高、观测历史长，资料通常最丰富；内侧小卫星受木星强散射光影响，观测难度较高；外侧不规则卫星较暗且轨道范围大，早期观测数量和精度可能更受限制。因此，本文在统计和残差分析中既给出 J1--J18 的总体结果，也按卫星或卫星组分别讨论。
+
+\subsection{Observation types included in this work} \label{subsec:obstypes}
+
+本文纳入的资料为地基光学天体测量观测。根据原始记录的表达形式，观测量暂分为绝对坐标、位置角和角距、差分坐标、切平面坐标以及其他 IMCCE 原始记录中可识别的天体测量量。为便于机器处理，后续星表拟采用与既有天然卫星观测星表相近的观测量枚举：绝对坐标（ABS）、位置角和角距（PAS）、切平面坐标（TAN）、差分坐标（DIF）以及两组绝对坐标之差（DRD）【待核验：IMCCE 木星卫星资料中实际出现的观测量类型】。
+
+若 IMCCE 原始资料中包含特殊类型记录，将在星表中保留其原始类型标识，并在统计分析中单独说明是否用于参考系转换和 \oc 计算。本文暂不主动加入非 IMCCE 来源的掩星、互掩互食、雷达或空间探测器测量资料。
+
+\subsection{Data not included in this work} \label{subsec:not_included}
+
+本文不报告新的观测资料，也不重新处理原始 CCD 图像或历史底片。本文所做的 Gaia DR3 星表系统误差改正，是对已发表或已入库天体测量结果的后验框架改正，而不是图像级重新归算。本文也不在当前阶段拟合新的木星卫星星历；DE441 + jup347 仅作为计算理论观测量和 \oc 残差的参考星历组合。
+
+\section{Catalog Compilation and Standardization} \label{sec:compilation}
+
+\subsection{Catalog design principles} \label{subsec:workflow}
+
+本文的星表构建流程由七个模块组成：IMCCE 原始数据收集、记录解析和数据溯源、观测量类型分类、时标统一、参考系统一、Gaia DR3 星表系统误差改正和 \oc 残差计算。原始数据解析模块负责将 IMCCE 记录转换为结构化表格，并建立目标、观测站、观测技术和文献来源的元数据；时标统一模块将可识别的观测时刻转换到 TT；参考系统一模块将可转换的绝对或相对观测量表达在 ICRS 中；星表系统误差改正模块根据观测所用参考星表和天空位置估计相对于 Gaia DR3 的系统偏差；\oc 模块使用 DE441 + jup347 计算理论观测量并给出残差。
+
+该流程的核心原则是保持原始资料可追溯。每条输出记录都应能够追溯到 IMCCE 原始记录、原始观测量、原始时标和原始参考系。对于缺失或无法可靠判断的信息，本文不强行补全，而是在星表中以质量标记和备注字段说明其处理状态。
+
+\subsection{Field definitions and metadata} \label{subsec:field_definitions}
+
+为支持后续星历拟合、误差分析和独立复核，本文输出星表采用分层字段设计。字段至少包括数据来源、观测元数据、时标和参考系、观测量定义、原始观测值、标准化观测值、Gaia DR3 星表偏差改正量、理论观测值、\oc 残差和质量标记。表 \ref{tab:fields} 给出当前字段组设计，完整字段字典将在数据处理完成后以机器可读说明文件发布【待填：字段说明文件格式】。
+
+字段设计尽量避免覆盖原始信息。即使某个记录已成功转换到 TT 和 ICRS，原始时刻、原始时标、原始参考系和原始观测量仍应保留。这样可以支持后续研究者使用不同星历、不同星表去偏方案或不同异常值策略重新计算。
+
+\begin{deluxetable}{lll}[ht!]
+\tablewidth{0pt}
+\tablecaption{输出星表字段组设计 \label{tab:fields}}
+\tablehead{
+\colhead{字段组} & \colhead{示例字段} & \colhead{说明}
+}
+\startdata
+数据来源 & database, source\_file, reference & 数据库、原始文件和文献来源 \\
+观测元数据 & site, instrument, technique & 观测站、仪器和观测技术 \\
+时标和参考系 & raw\_timescale, raw\_rfs, rfs\_center & 原始时标、原始参考系和参考系中心 \\
+目标和参考天体 & target, target\_id, center, comparison\_body & 目标卫星、中心天体和相对观测的比较天体 \\
+原始观测 & obs\_time, obs\_type, raw\_coord & 原始时刻、观测量类型和原始坐标 \\
+标准化结果 & mjd\_tt, obs\_coord\_icrs\_b, cat\_bias, obs\_coord\_icrs\_a & TT、ICRS、星表偏差改正量和改正后坐标 \\
+残差与质量 & computed\_coord, rsd\_icrs\_b, rsd\_icrs\_a, quality\_flag & 理论观测量、去偏前后残差、质量标记 \\
+\enddata
+\end{deluxetable}
+
+表 \ref{tab:field_dictionary} 给出当前阶段必须实现的最小字段字典。字段名为工作名，最终发布前可根据 AAS 机器可读表格或数据仓库规范调整，但字段含义不应丢失。
+
+\begin{deluxetable}{lll}[ht!]
+\tablewidth{0pt}
+\tablecaption{核心输出字段字典草案 \label{tab:field_dictionary}}
+\tablehead{
+\colhead{字段名} & \colhead{类型或单位} & \colhead{含义}
+}
+\startdata
+record\_id & string & 本文星表内部唯一记录号 \\
+database & string & 原始数据库；本文主表固定为 IMCCE \\
+source\_file & string & IMCCE 原始文件或下载单元 \\
+reference & string & 原始文献、URL、DOI 或 IMCCE 参考标识 \\
+target\_id & string & 木星卫星编号 J1--J18 \\
+target\_name & string & 目标卫星英文名 \\
+site & string & IAU 观测站代码或原始观测站名称 \\
+technique & enum & 观测技术，例如 CCD、photographic、micrometer、meridian 或 unknown \\
+raw\_time & string & 原始观测时刻字符串 \\
+raw\_timescale & enum & 原始时标，例如 TT、TDT、ET、UTC、UT 或 unknown \\
+mjd\_tt & day & 转换后的 TT 修正儒略日 \\
+raw\_rfs & string & 原始参考系或参考星表框架 \\
+rfs\_center & string & 参考系中心或观测位置中心 \\
+obs\_type & enum & ABS、PAS、TAN、DIF、DRD 或 unknown \\
+comparison\_body & string & 相对观测中的比较天体；绝对观测为 not\_applicable \\
+raw\_coord & string & 原始观测量及单位的保留表达 \\
+obs\_coord\_icrs\_b & arcsec or native & 转换到 ICRS 后、去除星表偏差前的观测量 \\
+cat\_bias & arcsec & Gaia DR3 参考下的星表系统误差改正量 \\
+obs\_coord\_icrs\_a & arcsec or native & 应用 cat\_bias 后的观测量 \\
+computed\_coord & arcsec or native & DE441 + jup347 生成的同类型理论观测量 \\
+rsd\_icrs\_b & arcsec & 去偏前 \oc 残差 \\
+rsd\_icrs\_a & arcsec & 去偏后 \oc 残差 \\
+quality\_flag & string & 时标、参考系、去偏、残差和异常状态的组合标记 \\
+note & string & 无法结构化表达的处理说明或待核验信息 \\
+\enddata
+\end{deluxetable}
+
+\subsection{Data collection from IMCCE} \label{subsec:data_collection}
+
+IMCCE 数据收集首先记录数据库入口、下载日期、原始文件名、文件校验信息和数据筛选条件【待填：具体下载日志】。若 IMCCE 以卫星、文献或观测类型组织文件，本文将在数据溯源字段中保留该组织信息。对于同一观测可能在不同文件中重复出现的情况，本文将根据观测目标、时刻、观测站、观测量和文献来源进行重复检查【待定：重复记录判定规则】。
+
+本文只将可以追溯到 IMCCE 原始记录的资料纳入主星表。若后续为了核验字段含义而查阅 ADS 原文或其他数据库，这些外部资料只作为解释和校验来源，不作为新增观测记录直接并入主星表，除非另设扩展版本并明确标记。
+
+数据收集完成后，本文至少需要形成三类中间表：原始文件清单、原始记录表和标准化记录表。原始文件清单用于说明每个下载文件的来源、访问日期和校验状态；原始记录表尽量一比一保留 IMCCE 记录；标准化记录表则给出统一字段、质量标记和后续计算结果。三者之间通过 record\_id 和 source\_file 保持可追溯关系。
+
+\subsection{Record parsing, target identification, and provenance} \label{subsec:parse}
+
+原始数据解析首先识别观测目标、观测时间、观测站、观测量类型、观测值、参考天体和文献来源。对 J1--J18 的目标识别采用统一编号和英文名称并行的方式：编号用于机器处理和星历调用，英文名称用于人工检查和论文展示。观测站信息优先采用 IAU 观测站代码；若原始资料只给出观测站名称，则在可核验时补充对应代码，并保留原始名称。
+
+观测技术按照原始资料和文献描述划分为 CCD、照相、目视测微、子午环、其他或未知等类别【待核验：最终分类表】。该分类用于后续残差统计，而不直接作为数据剔除标准。对于同一文献中可能包含多个观测技术或多个仪器的记录，本文尽量在记录层面保留最细粒度信息；若原始资料无法区分，则在星表中标记为混合或未知。
+
+\subsection{Observation-type classification} \label{subsec:classification}
+
+观测量类型分类是后续参考系转换和理论观测量计算的前提。绝对坐标记录为目标天体在原始参考系中的赤经和赤纬；位置角和角距记录为目标相对于比较天体的相对位置；切平面坐标和差分坐标记录为局部平面或小角近似下的相对坐标；DRD 类记录表示两个绝对坐标之间的观测差值【待核验：中文术语和 IMCCE 字段对应关系】。
+
+对于无法自动归类的记录，本文保留原始观测量字符串，并将标准观测量类型标记为 unknown。此类记录不应在转换程序中被静默丢弃，而应进入质量标记和异常日志，以便后续逐条核验。
+
+\section{Transformations and Corrections} \label{sec:transform}
+
+\subsection{Conversion to Terrestrial Time} \label{subsec:timescale}
+
+本文将所有可识别观测时刻统一到 TT。原始资料中可能出现 UTC、UT、ET、TDT 或未明确说明的时标。对于明确标识为 UTC 或 UT 的观测时刻，本文根据相应历元的闰秒和地球自转参数进行转换；对于 ET 和 TDT，则根据其与 TT 的定义关系处理；对于原始文献未说明时标的记录，本文不进行隐含假设，而是根据 IMCCE 元数据和原始文献说明进行个案判断，并在质量标记中记录处理依据。
+
+输出星表中的标准观测时刻采用 TT 对应的修正儒略日（MJD）或儒略日（JD）表示【待定：最终采用 MJD\_TT 还是 JD\_TT】。若保留原始日期字符串，则另设字段记录，以支持人工追溯和错误排查。
+
+\subsection{Conversion of absolute coordinates to ICRS} \label{subsec:absolute_icrs}
+
+本文的目标参考系为 ICRS。对于已经在 ICRS 或 Gaia 参考框架下给出的观测量，本文保留其标准化表达，并记录原始参考系信息。对于 FK4、FK5、B1950、J2000、平赤道平春分点或真赤道真春分点等参考系下的观测量，本文根据天体测量标准模型进行岁差、章动、E 项和框架偏差等必要转换【待填：采用软件库，例如 SOFA/ERFA/Astropy/SPICE，以及版本】。
+
+绝对赤经赤纬的转换相对直接。转换前后的坐标均保留在星表中：转换后但尚未去除星表系统误差的坐标记为 ICRS 下的去偏前坐标，随后再根据可用的参考星表信息应用 Gaia DR3 星表系统误差改正。
+
+\subsection{Conversion of relative coordinates to ICRS} \label{subsec:relative_icrs}
+
+相对观测量的 ICRS 转换需要额外处理比较天体的位置。若原始资料给出目标相对于木星、另一颗木星卫星或其他参考天体的位置角和角距，则需先获得比较天体在观测时刻的理论位置，再将相对量转换或表达在 ICRS 下。本文采用 DE441 + jup347 提供木星系统相关天体位置【待填：星历调用方式和参考天体覆盖范围】。
+
+对于 PAS 观测，角距本身不依赖参考系旋转，但位置角需要根据原参考系和 ICRS 的天北方向差异进行转换。对于 TAN、DIF 和 DRD 观测，两个坐标分量均需按其几何定义转换。若比较天体位置缺失、中心天体无法识别或原始参考系不明确，则本文不强制转换，而是在星表中保留原始量并标记转换状态。后续将评估由理论比较天体位置引入的误差是否相对于原始观测误差可忽略【待填：误差估计方法和结果】。
+
+为避免在相对观测处理中混合不同定义，本文将分别保存原始相对量、转换后 ICRS 相对量以及用于转换的比较天体理论位置。若相对观测量只能用于统计而不能可靠转换，则该记录仍保留在星表中，但不进入去偏后残差统计的主样本。
+
+\subsection{Gaia DR3-based star-catalog bias correction} \label{subsec:debias}
+
+历史地基天体测量资料通常依赖不同的参考星表进行归算，而不同参考星表相对于 ICRS/Gaia 框架存在位置相关的系统偏差。本文以 Gaia DR3 为基准，对可识别参考星表的观测资料进行系统误差改正。改正量表示为赤经方向的 \dra 和赤纬方向的 \ddec，并记录在输出星表中。
+
+星表系统误差改正需要知道原始观测所使用的参考星表、观测历元和目标在天空中的位置。若 IMCCE 或原始文献明确给出参考星表，则使用相应 Gaia DR3 对齐的偏差表或模型进行改正【待填：偏差表来源、生成方法或引用】。若参考星表未知，则不对该记录应用星表系统误差改正，并在字段中标记为 unknown。若参考星表名称存在歧义，则优先保留原始名称并在备注中说明，不进行强制归并。
+
+需要强调的是，星表系统误差改正并不等同于重新归算原始底片或 CCD 图像。本文处理的是已发表或已入库的天体测量结果，因此改正目标是减少参考星表框架差异导致的系统偏移，而不是替代完整的图像级天体测量归算。
+
+本文将分别统计参考星表可识别、不可识别和不适用的记录数量。对于已采用 Gaia 或明确 ICRS 框架归算的现代观测，catBias 可为零或标记为 not\_applicable；对于参考星表未知的记录，catBias 不应由年代或观测站推测生成，而应标记为 unknown。
+
+\subsection{Quality flags and missing-information handling} \label{subsec:flags}
+
+为便于后续筛选，本文为每条记录设置质量标记。质量标记至少包括：时标转换状态、参考系转换状态、相对观测转换状态、星表系统误差改正状态、\oc 计算状态和异常值状态。每个状态采用有限枚举值表示，例如 success、not\_applicable、unknown、failed 和 flagged【待定：中文稿中是否保留英文枚举】。
+
+质量标记不应被理解为简单的“好/坏”分类。某些早期记录虽然无法完成全部现代化改正，但仍可能在长期轨道约束中有价值。因此，本文尽量提供透明的处理状态，让后续使用者根据具体研究目标选择合适的数据子集。
+
+\section{O-C Residual Calculation} \label{sec:oc}
+
+\subsection{Ephemerides and observing geometry} \label{subsec:ephemerides}
+
+为评估整理后观测资料的质量，本文计算观测量与理论量之差，即 \oc 残差。理论位置采用 JPL DE441 行星历和 jup347 木星卫星星历计算【待补：星历文件来源、访问日期、引用】。计算中根据观测站位置、观测时刻和目标天体位置生成与原始观测类型一致的理论观测量。对于绝对坐标，残差表示为 \dra 和 \ddec；对于相对坐标，残差按相应观测量定义给出。
+
+理论观测量计算需要记录采用的星历文件、软件库、时间尺度输入、观测站坐标来源以及是否考虑光行时、像差、大气折射和相位效应【待核验：最终计算模型】。这些设置将写入处理说明文件，使后续研究者能够复现本文残差。
+
+\subsection{Theoretical observables for each observation type} \label{subsec:theoretical_obs}
+
+理论观测量应与原始观测量类型一致。对于 ABS 记录，理论量为目标天体在对应观测站、观测时刻和参考系下的赤经赤纬；对于 PAS、TAN、DIF 和 DRD 记录，理论量需先计算目标与比较天体的理论位置，再按原始观测量定义生成相同形式的相对量。这样可以避免将不同类型观测量强行投影到单一残差定义中。
+
+\subsection{Residuals before and after catalog-bias correction} \label{subsec:residual_before_after}
+
+\oc 残差在本文中主要用于质量评估和统计分析，而不用于拟合新的动力学星历。为区分 Gaia DR3 星表偏差改正的影响，本文拟同时保存去偏前残差和去偏后残差。去偏前残差记为 ICRS 坐标与理论量之差，去偏后残差记为去除 catBias 后的坐标与理论量之差【待定：字段名采用 rsdIcrsB/rsdIcrsA 还是更长的描述性字段名】。
+
+\subsection{Outlier marking and statistical grouping} \label{subsec:outliers}
+
+\oc 残差统计将按卫星、观测技术、观测年代、观测站和文献来源分组进行。对明显异常记录，本文暂采用标记而非删除的策略；若需进行离群值剔除，将在结果部分明确给出标准，例如基于中位数绝对偏差或固定角秒阈值的规则【待定：离群值规则】。
+
+\section{The J1--J18 Observational Catalog} \label{sec:catalog}
+
+\subsection{Output files and machine-readable format} \label{subsec:outputs}
+
+最终星表计划采用机器可读的表格格式输出，候选格式包括 PSV、CSV 和 FITS【待定：最终格式】。考虑到字段数量较多且部分字符串中可能包含逗号，PSV 或 FITS 更适合长期维护。正文中将给出字段说明表，完整星表和处理说明文件将作为电子表格、补充材料或公开数据仓库发布【待定：发布位置】。
+
+除主星表外，本文还应提供若干支撑文件：字段说明文件、IMCCE 下载清单、观测技术映射表、参考星表名称映射表、质量标记说明表、星历和软件版本说明、以及用于生成正文图表的汇总统计表【待填：实际文件名】。
+
+\subsection{Temporal coverage and satellite-by-satellite statistics} \label{subsec:coverage}
+
+本节将在数据处理完成后填入最终统计量。当前版本先固定结果叙事结构和图表位置。
+
+J1--J18 木星卫星观测资料覆盖【待填：起止年份】，共包含【待填】条观测记录、【待填】个观测坐标和【待填】个观测夜。表 \ref{tab:statistics_placeholder} 将列出每颗卫星的观测记录数、观测坐标数、观测夜数和时间覆盖范围。预计 J1--J4 的数据量显著高于其他卫星，外侧不规则卫星的数据量较少且时间分布更不均匀。
+
+\begin{deluxetable}{lrrrr}[ht!]
+\tablewidth{0pt}
+\tablecaption{J1--J18 观测资料统计占位表 \label{tab:statistics_placeholder}}
+\tablehead{
+\colhead{卫星} & \colhead{记录数} & \colhead{观测坐标数} & \colhead{观测夜数} & \colhead{年份范围}
+}
+\startdata
+J1--J18 total & 【待填】 & 【待填】 & 【待填】 & 【待填】 \\
+\enddata
+\end{deluxetable}
+
+\subsection{Observation techniques, sites, and literature sources} \label{subsec:techniques}
+
+不同年代的观测技术差异是影响残差统计的重要因素。表【待填】将按 CCD、照相、目视测微、子午环和未知技术统计记录数量及其时间覆盖。预期现代 CCD 资料的残差离散度小于早期照相和目视测微资料，但具体量级需由最终 \oc 计算确认。
+
+本文还将统计主要观测站和主要文献来源的记录数量、时间覆盖和残差离散度。该统计不用于评价单个观测站或文献的优劣，而用于揭示历史数据中可能存在的系统差异，并为后续星历拟合中的权重设定提供参考。
+
+\subsection{Gaia DR3 bias correction statistics} \label{subsec:bias_results}
+
+对于可识别参考星表的记录，本文计算相对于 Gaia DR3 的系统误差改正量。图【待填】将展示 \dra 和 \ddec 改正量的分布，并按卫星组或观测年代区分。若部分记录的改正量与原始 \oc 残差离散度相当，则说明星表系统误差是历史资料再处理中的重要因素。
+
+星表偏差统计至少应包括改正成功率、unknown 比例、not\_applicable 比例、改正量中位数和中位数绝对偏差。对于改正量较大的记录或来源，本文将检查其是否集中于特定年代、参考星表、天区或观测技术。
+
+\subsection{O-C residual statistics} \label{subsec:residual_results}
+
+使用 DE441 + jup347 计算 \oc 残差后，本文将从总体和分组两个层面分析资料质量。总体统计包括每颗卫星在赤经和赤纬方向的残差均值、标准差、中位数和中位数绝对偏差。分组统计包括按观测技术、观测年代、观测站和文献来源的残差分布。
+
+需要注意的是，\oc 残差同时包含观测误差、星表系统误差、参考系转换误差和理论星历误差。本文不将残差简单解释为观测误差本身，而是将其作为观测资料与当前理论模型一致性的综合指标。
+
+去偏前后残差对比是本文质量评估的核心结果之一。若 Gaia DR3 星表偏差改正有效，预期可在部分历史参考星表或特定年代观测中看到系统偏移减小；若改正后离散度未显著降低，也应如实报告，并讨论可能原因，例如原始观测误差占主导、参考星表信息缺失、相对观测定义不完整或理论星历误差不可忽略。
+
+\section{Discussion} \label{sec:discussion}
+
+\subsection{Scope relative to new-observation studies} \label{subsec:no_new_obs}
+
+本文最重要的边界是：不报告新的观测资料。与同时给出新 CCD 观测和历史资料整理的研究不同，本文的贡献集中在已有公开资料的系统汇编、标准化处理、Gaia DR3 对齐和质量评估。这样的定位决定了本文不声称直接提高某一时段的观测覆盖，也不声称已经完成新的木星卫星星历拟合。
+
+这一边界也使本文的价值更加明确。对于长期星历研究而言，统一、可追溯和质量标记清楚的历史观测资料本身就是重要基础设施。只有在原始资料的时标、参考系、星表偏差和残差特征被系统整理后，后续动力学拟合中的权重设定、异常值处理和长期趋势解释才更可靠。
+
+\subsection{Advantages and limits of a single IMCCE source} \label{subsec:imcce_limit}
+
+本文暂只使用 IMCCE 数据源，其优势是数据入口清晰、处理链条可控、结果可复现。单一数据源也有助于在初稿阶段集中解决字段解析、观测类型统一和 Gaia DR3 对齐等核心问题。
+
+限制在于，IMCCE 之外可能仍存在未收录或更新版本的观测资料。本文星表因此不应被表述为“所有可获得木星卫星观测资料的全集”，而应表述为“基于 IMCCE 数据库的 J1--J18 木星卫星观测星表”。未来版本可考虑与 MPC、JPL SSD、ADS 原文表格或新发表资料交叉比对，以进一步提高完整性。
+
+\subsection{Use in future ephemeris improvement} \label{subsec:future_ephem}
+
+本文星表可作为后续木星卫星星历拟合的输入资料，但拟合本身需要进一步工作，包括动力学模型选择、参数估计、权重设定和异常值处理。本文给出的 \oc 残差和质量标记可为这些步骤提供依据。例如，同一观测站或同一文献来源若表现出稳定系统偏移，可在拟合中单独建模或降低权重；早期资料可根据其残差离散度和时间覆盖贡献设置不同权重。
+
+\subsection{Remaining uncertainties} \label{subsec:remaining}
+
+当前初稿仍有若干必须在定稿前核验的项目，包括 IMCCE 数据下载日期、J1--J18 编号和中文名、原始时标和参考系统计、Gaia DR3 去偏表来源、相对观测转换误差评估、DE441 和 jup347 的正式引用、以及最终星表发布位置。所有未确认项目在正文中保留为【待填】或【待核验】，不以推测值替代。
+
+\section{Conclusions} \label{sec:conclusions}
+
+本文针对 IMCCE 数据库中的 J1--J18 木星卫星地基天体测量资料，构建了一份面向星历研究的统一观测星表。本文不包含新的观测数据，而是将工作重点放在已有资料的结构化整理、时标统一、参考系统一、Gaia DR3 星表系统误差改正和 \oc 残差评估上。
+
+当前星表将观测资料统一到 TT 和 ICRS，并采用 DE441 + jup347 作为理论星历计算残差。最终星表将提供原始观测字段、标准化字段、改正量、残差和质量标记，使每条记录既可用于机器处理，也可追溯到原始数据来源。该工作为后续木星卫星星历改进、历史观测再分析和系统误差研究提供了基础数据产品。
+
+在后续工作中，我们将完成全部数据统计，核验参考星表改正方案，完善异常值标记规则，并评估与其他公开数据库交叉补充的可能性。
+
+\section{Data and Code Availability} \label{sec:availability}
+
+本文使用的原始观测资料来自 IMCCE 公开数据库，访问时间为【待填】。本文生成的标准化观测星表、字段说明文件、处理脚本和图表源数据将在【待填：仓库或补充材料位置】公开。若部分原始数据受数据库许可或再分发限制，本文将提供处理后字段、元数据和可复现脚本，并明确原始数据获取路径。
+
+\begin{acknowledgments}
+本文使用了 IMCCE 提供的天然卫星观测资料，并使用 Gaia DR3 作为参考星表系统误差改正基准。本文的理论位置计算使用 JPL DE441 行星历和 jup347 木星卫星星历。【待填：基金、导师、合作者、软件包致谢】
+\end{acknowledgments}
+
+\bibliographystyle{aasjournalv7}
+\bibliography{references}
+
+\appendix
+
+\section{Planned Figures and Tables} \label{app:planned}
+
+\begin{itemize}
+    \item 图 1：J1--J18 观测数量随时间分布。
+    \item 图 2：Gaia DR3 星表系统误差改正量分布。
+    \item 图 3：DE441 + jup347 下的 \oc 残差时间序列。
+    \item 图 4：星表系统误差改正前后 \oc 残差对比。
+    \item 表 1：每颗卫星的观测数量、观测夜数和时间覆盖。
+    \item 表 2：不同观测技术的数量和时间覆盖。
+    \item 表 3：主要观测站或文献来源的残差统计。
+    \item 表 4：星表系统误差改正成功率和改正量统计。
+    \item 表 5：输出星表字段说明。
+\end{itemize}
+
+\section{Minimum Data Products Required Before Final Analysis} \label{app:data_requirements}
+
+为完成本文结果部分，数据处理阶段至少应生成以下汇总产品：
+
+\begin{itemize}
+    \item 每颗卫星的记录数、观测坐标数、观测夜数和起止年份。
+    \item 按年代、卫星和观测技术统计的观测数量时间序列。
+    \item 按观测站和文献来源统计的记录数、年份范围和主要观测类型。
+    \item 原始时标、原始参考系和观测量类型的数量统计。
+    \item 可识别参考星表列表及其记录数、时间覆盖和 unknown 比例。
+    \item Gaia DR3 星表系统误差改正量的 \dra 和 \ddec 分布。
+    \item DE441 + jup347 下每条记录的理论观测量和去偏前后 \oc 残差。
+    \item 按卫星、年代、观测技术、观测站和文献来源分组的残差均值、标准差、中位数和中位数绝对偏差。
+    \item 离群值候选清单及其触发规则。
+    \item 处理脚本版本、星历文件版本、软件库版本和数据下载日志。
+\end{itemize}
+
+\end{document}
